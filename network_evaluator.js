@@ -9,7 +9,7 @@ class NetworkEvaluator {
     if (a == null || b == null) return false;
     if (a.length != b.length) return false;
 
-    for (var i = 0; i < a.length; ++i) {
+    for (let i = 0; i < a.length; ++i) {
       if (a[i] !== b[i]) return false;
     }
     return true;
@@ -24,8 +24,9 @@ class NetworkEvaluator {
       }
       if (this._arraysEqual(output, this._testSet[i].output)) correctlyClassified++;
     }
-    // console.log(correctlyClassified + " / " + this._testSet.length + " classified correctly.");
-    return correctlyClassified / this._testSet.length;
+    console.log(correctlyClassified + " / " + this._testSet.length + " classified correctly.");
+
+    return correctlyClassified;
   }
 }
 

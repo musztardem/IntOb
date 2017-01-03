@@ -1,22 +1,27 @@
-import NetworkEvaluator from './network_evaluator';
+import FitnessCounter from './fitness_counter';
 
 const POPULATION_SIZE = 12;
-const MUTATION_RATE = 0.2;
+const MUTATION_RATE = 0.4;
 
 class GeneticTrainer {
-  constructor(network) {
+  constructor(network, keepNetwork) {
     this._network = network;
+    this._keepNetwork = keepNetwork || true;
     this._initialize();
   }
 
   _initialize() {
     this._individualSize = this._getIndividualSize();
-    this._population = this._generateInitialPopulation();
+    if (this._keepNetwork) {
+      this._population = this._generateDerivedPopulation();
+    } else {
+      this._population = this._generateRandomPopulation();
+    }
   }
 
-  _generateInitialPopulation() {
+  _generateRandomPopulation() {
     let population = [];
-    for(let i = 0 ; i < POPULATION_SIZE; i++) {
+    for (let i = 0 ; i < POPULATION_SIZE; i++) {
       let individual = {
         genome: [],
         fitness: 0.0
@@ -30,10 +35,32 @@ class GeneticTrainer {
     return population;
   }
 
+  _generateDerivedPopulation() {
+    const { layers } = this._network;
+    const initialGenome = [];
+
+    for (let key in layers.input.connectedTo[0].connections) {
+      initialGenome.push(layers.input.connectedTo[0].connections[key].weight);
+    }
+    for (let key in layers.hidden[0].connectedTo[0].connections) {
+      initialGenome.push(layers.hidden[0].connectedTo[0].connections[key].weight);
+    }
+
+    let population = [];
+    for (let i = 0 ; i < POPULATION_SIZE; i++) {
+      let individual = {
+        genome: initialGenome.slice(),
+        fitness: 0
+      };
+      population.push(this._mutate(individual));
+    }
+
+    return population;
+  }
+
   _getIndividualSize() {
     const { layers } = this._network;
-    return this._individualSize ||
-      layers.input.connectedTo[0].size + layers.hidden[0].connectedTo[0].size;
+    return layers.input.connectedTo[0].size + layers.hidden[0].connectedTo[0].size;
   }
 
   _applyGenomeToNetwork(genome) {
@@ -49,7 +76,7 @@ class GeneticTrainer {
       layers.input.connectedTo[0].connections[inputLayerKeys[i]].weight
         = inputLayerWeights[i];
     }
-    for(let i = 0; i < hiddenLayerKeys.length; i++ ) {
+    for (let i = 0; i < hiddenLayerKeys.length; i++ ) {
       layers.hidden[0].connectedTo[0].connections[hiddenLayerKeys[i]].weight
         = hiddenLayerWeights[i];
     }
@@ -57,8 +84,8 @@ class GeneticTrainer {
 
   _evaluate(individual, trainingSet) {
     this._applyGenomeToNetwork(individual.genome);
-    const networkEvaluator = new NetworkEvaluator(this._network, trainingSet);
-    const fitness = networkEvaluator.evaluate();
+    const fitnessCounter = new FitnessCounter(this._network, trainingSet);
+    const fitness = fitnessCounter.count();
     individual.fitness = fitness;
   }
 
@@ -118,27 +145,30 @@ class GeneticTrainer {
   train(trainingSet) {
     let bestFitness = 0;
     let generations = 0;
-    while (bestFitness < 0.9) {
-      this._population.map(individual => this._evaluate(individual, trainingSet));
+    // while (bestFitness < 120 * 9 - 5) {
+    while (generations < 500) {
+      this._population.forEach((individual, index) => {
+        this._evaluate(individual, trainingSet);
+      });
       let selectedIndividuals = this._selection();
 
       bestFitness = selectedIndividuals[0].fitness;
-      // console.log('GENERATION: ' + generations + ', best fitness: ' + bestFitness );
+      console.log('GENERATION: ' + generations + ', best fitness: ' + bestFitness );
       generations++;
 
-      console.log('--- setosa [1, 0, 0]');
-      console.log(this._network.activate([5.0,3.5,1.6,0.6]));
-      console.log(this._network.activate([5.1,3.8,1.9,0.4]));
-      console.log(this._network.activate([4.8,3.0,1.4,0.3]));
-      console.log('--- versicolor [0, 1, 0]');
-      console.log(this._network.activate([6.2,2.9,4.3,1.3]));
-      console.log(this._network.activate([5.1,2.5,3.0,1.1]));
-      console.log(this._network.activate([5.7,2.8,4.1,1.3]));
-      console.log('--- virginica [0, 0, 1]');
-      console.log(this._network.activate([6.3,3.3,6.0,2.5]));
-      console.log(this._network.activate([5.8,2.7,5.1,1.9]));
-      console.log(this._network.activate([7.1,3.0,5.9,2.1]));
-      console.log();
+      // console.log('--- setosa [1, 0, 0]');
+      // console.log(this._network.activate([5.0,3.5,1.6,0.6]));
+      // console.log(this._network.activate([5.1,3.8,1.9,0.4]));
+      // console.log(this._network.activate([4.8,3.0,1.4,0.3]));
+      // console.log('--- versicolor [0, 1, 0]');
+      // console.log(this._network.activate([6.2,2.9,4.3,1.3]));
+      // console.log(this._network.activate([5.1,2.5,3.0,1.1]));
+      // console.log(this._network.activate([5.7,2.8,4.1,1.3]));
+      // console.log('--- virginica [0, 0, 1]');
+      // console.log(this._network.activate([6.3,3.3,6.0,2.5]));
+      // console.log(this._network.activate([5.8,2.7,5.1,1.9]));
+      // console.log(this._network.activate([7.1,3.0,5.9,2.1]));
+      // console.log();
 
       this._createNewGeneration(selectedIndividuals);
     }
