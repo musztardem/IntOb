@@ -2,6 +2,7 @@ import FitnessCounter from './fitness_counter';
 
 const POPULATION_SIZE = 12;
 const MUTATION_RATE = 0.4;
+const LOG = false;
 
 class GeneticTrainer {
   constructor(network, keepNetwork) {
@@ -142,10 +143,28 @@ class GeneticTrainer {
     this._population = newGeneration;
   }
 
+  _logSample() {
+    if (LOG) {
+      console.log('--- setosa [1, 0, 0]');
+      console.log(this._network.activate([5.0,3.5,1.6,0.6]));
+      console.log(this._network.activate([5.1,3.8,1.9,0.4]));
+      console.log(this._network.activate([4.8,3.0,1.4,0.3]));
+      console.log('--- versicolor [0, 1, 0]');
+      console.log(this._network.activate([6.2,2.9,4.3,1.3]));
+      console.log(this._network.activate([5.1,2.5,3.0,1.1]));
+      console.log(this._network.activate([5.7,2.8,4.1,1.3]));
+      console.log('--- virginica [0, 0, 1]');
+      console.log(this._network.activate([6.3,3.3,6.0,2.5]));
+      console.log(this._network.activate([5.8,2.7,5.1,1.9]));
+      console.log(this._network.activate([7.1,3.0,5.9,2.1]));
+      console.log();
+    }
+  }
+
   train(trainingSet) {
     let bestFitness = 0;
     let generations = 0;
-    // while (bestFitness < 120 * 9 - 5) {
+
     while (generations < 500) {
       this._population.forEach((individual, index) => {
         this._evaluate(individual, trainingSet);
@@ -156,19 +175,7 @@ class GeneticTrainer {
       console.log('GENERATION: ' + generations + ', best fitness: ' + bestFitness );
       generations++;
 
-      // console.log('--- setosa [1, 0, 0]');
-      // console.log(this._network.activate([5.0,3.5,1.6,0.6]));
-      // console.log(this._network.activate([5.1,3.8,1.9,0.4]));
-      // console.log(this._network.activate([4.8,3.0,1.4,0.3]));
-      // console.log('--- versicolor [0, 1, 0]');
-      // console.log(this._network.activate([6.2,2.9,4.3,1.3]));
-      // console.log(this._network.activate([5.1,2.5,3.0,1.1]));
-      // console.log(this._network.activate([5.7,2.8,4.1,1.3]));
-      // console.log('--- virginica [0, 0, 1]');
-      // console.log(this._network.activate([6.3,3.3,6.0,2.5]));
-      // console.log(this._network.activate([5.8,2.7,5.1,1.9]));
-      // console.log(this._network.activate([7.1,3.0,5.9,2.1]));
-      // console.log();
+      this._logSample();
 
       this._createNewGeneration(selectedIndividuals);
     }
